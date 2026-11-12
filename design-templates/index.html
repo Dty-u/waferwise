@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>前端模板选型</title>
+<style>
+  :root { --bg: #f4f4f1; --card: #fff; --line: #e2e1dc; --text: #1c1c1a; --muted: #6f6e68; --accent: #1667e8; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #131312; --card: #1c1c1a; --line: #2e2e2b; --text: #ecebe6; --muted: #9a9890; --accent: #6aa3ff; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 system-ui, 'Noto Sans SC', sans-serif; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 40px 24px 60px; }
+  h1 { font-size: 26px; margin: 0 0 6px; }
+  .lead { color: var(--muted); margin: 0 0 28px; max-width: 760px; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
+  .frame { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-bottom: 1px solid var(--line); background: var(--bg); }
+  .frame iframe { position: absolute; top: 0; left: 0; width: 1440px; height: 900px; border: 0; transform-origin: 0 0; pointer-events: none; }
+  .body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .body h2 { margin: 0; font-size: 17px; display: flex; gap: 10px; align-items: baseline; }
+  .body h2 span { font: 600 12px ui-monospace, monospace; color: var(--accent); }
+  .body p { margin: 0; color: var(--muted); font-size: 14px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tags span { font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; color: var(--muted); }
+  .fit { font-size: 13px; }
+  .fit b { font-weight: 600; }
+  .open { margin-top: auto; align-self: flex-start; color: var(--accent); text-decoration: none; font-weight: 500; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>晶圆智选 · 前端模板选型</h1>
+  <p class="lead">四套方向都基于同一份模拟数据（结构对齐 <code>SessionResponse</code> 与选型 <code>report_data</code>），覆盖五种会话状态：选型完成、问答完成、等待澄清、运行中、直接回复。打开后点击左侧 / 顶部会话即可切换状态。</p>
+  <div class="grid" id="grid"></div>
+</div>
+<script>
+const T = [
+  { id: 'A', file: 'a-console.html', name: '工程控制台', desc: '深色三栏：会话列表 / 对话 / 检查器（执行轨迹、证据来源、选型报告）。信息密度最高，执行过程和证据随时可查。',
+    tags: ['深色', '三栏', '高密度', '检查器'], fit: '<b>适合：</b>研发/工艺工程师长时间使用，需要频繁核对证据与耗时。' },
+  { id: 'B', file: 'b-dossier.html', name: '研究报告', desc: '纸质卷宗风格，以“报告”为中心：结论横幅、权重条、候选对比、评分表、风险登记，证据以边注形式排在右侧。',
+    tags: ['衬线排版', '文档优先', '边注引用', '可打印'], fit: '<b>适合：</b>选型结论要给管理层评审、汇报或归档。' },
+  { id: 'C', file: 'c-pipeline.html', name: '流程画布', desc: '把 LangGraph 工作流画成节点图：主路由 + 子工作流，显示每个节点的状态、重复次数和循环上限，支持“回放执行过程”。',
+    tags: ['可视化', '可解释', '节点详情', '回放'], fit: '<b>适合：</b>演示 Agent 能力、调试工作流、项目答辩展示。' },
+  { id: 'D', file: 'd-focus.html', name: '极简对话', desc: '居中单栏的对话体验：执行过程折叠、来源以引用胶囊悬停预览、选型结果为卡片，完整报告从右侧抽屉展开。支持深浅色。',
+    tags: ['单栏', '浅/深色', '抽屉报告', '上手零成本'], fit: '<b>适合：</b>面向更广的业务用户，追求简单好用。' },
+]
+document.getElementById('grid').innerHTML = T.map((t) => `<div class="card"><div class="frame"><iframe src="${t.file}" loading="lazy" tabindex="-1" title="${t.name}"></iframe></div>
+  <div class="body"><h2><span>${t.id}</span>${t.name}</h2><p>${t.desc}</p><div class="tags">${t.tags.map((x) => `<span>${x}</span>`).join('')}</div>
+  <div class="fit">${t.fit}</div><a class="open" href="${t.file}">打开模板 →</a></div></div>`).join('')
+const fit = () => document.querySelectorAll('.frame').forEach((f) => { f.firstElementChild.style.transform = `scale(${f.clientWidth / 1440})` })
+addEventListener('resize', fit); fit()
+</script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>D · 极简对话</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff; --side: #f7f7f8; --soft: #f2f2f4; --line: #e6e6ea; --text: #1b1b1f; --muted: #6d6d78; --dim: #a5a5b0;
+    --accent: #5b55d6; --accent-soft: #eeedfc; --ok: #1f9d6a; --warn: #c97a0a; --warn-soft: #fdf3e2;
+    --sans: 'Inter', 'Noto Sans SC', system-ui, sans-serif; --shadow: 0 8px 30px rgba(20, 20, 40, .08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #151518; --side: #1b1b1f; --soft: #232328; --line: #2d2d33; --text: #ececf0; --muted: #9a9aa6; --dim: #5d5d68; --accent: #8f8af0; --accent-soft: #29274a; --warn-soft: #34290f; --shadow: 0 8px 30px rgba(0,0,0,.4); }
+  }
+  :root[data-theme="dark"] { --bg: #151518; --side: #1b1b1f; --soft: #232328; --line: #2d2d33; --text: #ececf0; --muted: #9a9aa6; --dim: #5d5d68; --accent: #8f8af0; --accent-soft: #29274a; --warn-soft: #34290f; --shadow: 0 8px 30px rgba(0,0,0,.4); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 15px/1.7 var(--sans); }
+  button, input, textarea { font: inherit; color: inherit; }
+  .app { display: grid; grid-template-columns: 260px 1fr; height: 100vh; }
+  .app.collapsed { grid-template-columns: 0 1fr; }
+  .app.collapsed aside { visibility: hidden; }
+  aside { background: var(--side); display: flex; flex-direction: column; padding: 12px; min-width: 0; overflow: hidden; }
+  .top { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 12px; }
+  .logo { font-weight: 600; display: flex; gap: 8px; align-items: center; }
+  .logo i { width: 22px; height: 22px; border-radius: 7px; background: linear-gradient(135deg, var(--accent), #b07cf0); }
+  .icon { width: 32px; height: 32px; border-radius: 8px; border: 0; background: transparent; cursor: pointer; color: var(--muted); font-size: 16px; }
+  .icon:hover { background: var(--soft); }
+  .newc { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 8px 12px; cursor: pointer; margin-bottom: 14px; }
+  .grp { font-size: 12px; color: var(--dim); padding: 10px 8px 4px; }
+  .s { padding: 7px 10px; border-radius: 8px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; }
+  .s span { overflow: hidden; text-overflow: ellipsis; }
+  .s:hover { background: var(--soft); } .s.on { background: var(--soft); font-weight: 500; }
+  .s i { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .i-info { background: var(--accent); animation: pulse 1s infinite; } .i-warn { background: var(--warn); } .i-ok, .i-mute { background: transparent; }
+  @keyframes pulse { 50% { opacity: .3; } }
+  .acct { margin-top: auto; display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 10px; font-size: 13px; cursor: pointer; }
+  .acct:hover { background: var(--soft); }
+  .av { width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 600; font-size: 12px; }
+  .acct small { display: block; color: var(--dim); font-size: 11px; }
+
+  main { display: flex; flex-direction: column; min-width: 0; position: relative; }
+  .bar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; }
+  .bar .ttl { font-size: 14px; color: var(--muted); }
+  .scroll { flex: 1; overflow: auto; }
+  .col { max-width: 760px; margin: 0 auto; padding: 8px 24px 40px; }
+  .u { display: flex; justify-content: flex-end; margin: 18px 0; }
+  .u div { background: var(--soft); border-radius: 18px; padding: 10px 16px; max-width: 80%; }
+  .b { margin: 18px 0 28px; }
+  .b p { margin: 0 0 12px; } .b ul { margin: 0 0 12px; padding-left: 22px; }
+  .cite { display: inline-grid; place-items: center; min-width: 17px; height: 17px; font-size: 10px; background: var(--soft); color: var(--muted); border-radius: 9px; padding: 0 4px; margin: 0 1px; vertical-align: 2px; cursor: default; }
+  details.steps { margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+  details.steps summary { cursor: pointer; list-style: none; display: inline-flex; gap: 6px; align-items: center; }
+  details.steps summary::before { content: '▸'; font-size: 10px; transition: .2s; }
+  details.steps[open] summary::before { transform: rotate(90deg); }
+  .stl { border-left: 2px solid var(--line); margin: 8px 0 0 4px; padding-left: 14px; }
+  .stl div { display: flex; justify-content: space-between; padding: 2px 0; max-width: 420px; }
+  .stl span:last-child { color: var(--dim); font-variant-numeric: tabular-nums; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { display: flex; gap: 6px; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px 3px 4px; font-size: 12px; color: var(--muted); position: relative; cursor: default; max-width: 260px; }
+  .chip b { min-width: 18px; height: 18px; border-radius: 9px; background: var(--soft); display: grid; place-items: center; font-weight: 500; font-size: 10px; }
+  .chip span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chip .tip { display: none; position: absolute; bottom: calc(100% + 8px); left: 0; width: 300px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 12px; box-shadow: var(--shadow); color: var(--text); font-size: 13px; z-index: 3; white-space: normal; }
+  .chip:hover .tip { display: block; }
+  .tip small { color: var(--dim); display: block; margin-top: 4px; }
+  .acts { display: flex; gap: 2px; margin-top: 8px; }
+  .acts button { border: 0; background: none; color: var(--dim); cursor: pointer; border-radius: 6px; padding: 2px 8px; font-size: 13px; }
+  .acts button:hover { background: var(--soft); color: var(--text); }
+  .rcard { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; margin: 6px 0 4px; }
+  .rcard .rh { padding: 16px 18px; display: flex; gap: 14px; align-items: center; }
+  .rcard .ico { width: 40px; height: 40px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 600; }
+  .rcard h3 { margin: 0; font-size: 15px; font-weight: 600; }
+  .rcard .rh small { color: var(--muted); font-size: 13px; }
+  .rank { border-top: 1px solid var(--line); padding: 10px 18px; }
+  .rank div { display: grid; grid-template-columns: 20px 1fr 120px 40px; gap: 10px; align-items: center; font-size: 13px; padding: 4px 0; }
+  .rank .bb { height: 6px; border-radius: 3px; background: var(--soft); overflow: hidden; }
+  .rank .bb i { display: block; height: 100%; background: var(--dim); border-radius: 3px; }
+  .rank div:first-child .bb i { background: var(--accent); }
+  .rank em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .rf { border-top: 1px solid var(--line); padding: 10px 18px; display: flex; gap: 8px; background: var(--side); }
+  .btn { border: 1px solid var(--line); background: var(--bg); border-radius: 9px; padding: 6px 14px; cursor: pointer; font-size: 13px; }
+  .btn.p { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .clar { border: 1px solid var(--line); border-radius: 16px; padding: 6px; }
+  .clar .qq { padding: 10px 12px; border-radius: 10px; }
+  .clar .qq:focus-within { background: var(--soft); }
+  .clar .qq div { font-size: 14px; }
+  .clar input { width: 100%; border: 0; background: transparent; outline: none; padding: 4px 0 0; color: var(--muted); }
+  .clar .ft { display: flex; justify-content: flex-end; gap: 8px; padding: 6px; }
+  .warn { background: var(--warn-soft); color: var(--warn); border-radius: 10px; padding: 6px 12px; font-size: 13px; margin-top: 10px; }
+  .thinking { display: flex; gap: 10px; align-items: center; color: var(--muted); }
+  .thinking .shim { background: linear-gradient(90deg, var(--muted) 30%, var(--text) 50%, var(--muted) 70%); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shim 1.6s linear infinite; }
+  @keyframes shim { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+  .hello { text-align: center; padding-top: 14vh; }
+  .hello h1 { font-size: 30px; font-weight: 600; margin: 0 0 6px; letter-spacing: -.01em; }
+  .hello p { color: var(--muted); margin: 0 0 28px; }
+  .sugg { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; }
+  .sugg div { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; cursor: pointer; font-size: 14px; }
+  .sugg div:hover { background: var(--side); }
+  .sugg small { display: block; color: var(--accent); font-size: 12px; margin-bottom: 2px; }
+  .composer { padding: 0 24px 18px; }
+  .cin { max-width: 760px; margin: 0 auto; border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); background: var(--bg); padding: 8px 8px 8px 18px; display: flex; align-items: flex-end; gap: 8px; }
+  .cin textarea { flex: 1; border: 0; outline: none; resize: none; background: transparent; padding: 8px 0; min-height: 24px; max-height: 160px; }
+  .modes { display: flex; gap: 4px; }
+  .modes button { border: 1px solid var(--line); background: none; border-radius: 999px; font-size: 12px; padding: 4px 10px; cursor: pointer; color: var(--muted); white-space: nowrap; }
+  .modes button.on { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+  .send { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--text); color: var(--bg); cursor: pointer; font-size: 16px; flex-shrink: 0; }
+  .send.stop { background: var(--soft); color: var(--text); }
+  .hint { text-align: center; color: var(--dim); font-size: 12px; margin-top: 8px; }
+  .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 100vw); background: var(--bg); border-left: 1px solid var(--line); box-shadow: var(--shadow); transform: translateX(100%); transition: transform .25s; z-index: 5; display: flex; flex-direction: column; }
+  .drawer.open { transform: none; }
+  .dh { display: flex; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--line); gap: 8px; }
+  .dh b { flex: 1; }
+  .db { overflow: auto; padding: 18px 22px 40px; font-size: 14px; }
+  .db h4 { font-size: 13px; color: var(--muted); font-weight: 500; margin: 22px 0 8px; }
+  .hero { background: var(--accent-soft); border-radius: 14px; padding: 16px; }
+  .hero b { font-size: 20px; display: block; margin: 2px 0 6px; }
+  .hero .st { display: flex; gap: 16px; font-size: 13px; color: var(--muted); margin-top: 10px; }
+  .hero .st strong { color: var(--text); }
+  .db table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .db th { text-align: left; color: var(--dim); font-weight: 500; padding: 6px 4px; border-bottom: 1px solid var(--line); }
+  .db td { padding: 7px 4px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  .db td.lo { color: var(--warn); }
+  .rk { padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .rk span { font-size: 11px; border-radius: 4px; padding: 1px 6px; margin-right: 6px; }
+  .rk .high { background: #fde4e4; color: #b42318; } .rk .medium { background: var(--warn-soft); color: var(--warn); } .rk .low { background: var(--soft); color: var(--muted); }
+  @media (max-width: 760px) { .app { grid-template-columns: 0 1fr; } aside { visibility: hidden; } .app.mobile-open { grid-template-columns: 1fr 0; } .app.mobile-open aside { visibility: visible; } .sugg { grid-template-columns: 1fr; } .col { padding: 8px 16px 32px; } .composer { padding: 0 12px 12px; } .modes { display: none; } }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <aside>
+    <div class="top"><div class="logo"><i></i>晶圆智选</div><button class="icon" id="collapse" title="收起侧栏">⟨</button></div>
+    <div class="newc" data-new>＋ 新对话</div>
+    <div id="slist"></div>
+    <div class="acct"><div class="av">U1</div><div>user-001<small>project-wafer-01</small></div></div>
+  </aside>
+  <main>
+    <div class="bar"><button class="icon" id="expand" title="展开侧栏">☰</button><span class="ttl" id="ttl"></span><span style="flex:1"></span><button class="icon" id="theme" title="切换主题">◐</button></div>
+    <div class="scroll"><div class="col" id="col"></div></div>
+    <div class="composer">
+      <div class="cin">
+        <textarea rows="1" placeholder="问点什么，或描述一个选型需求"></textarea>
+        <div class="modes" id="modes"><button class="on">自动</button><button>问答</button><button>选型</button></div>
+        <button class="send" id="send">↑</button>
+      </div>
+      <div class="hint">回答基于知识库、知识图谱与联网检索，关键结论请核对来源</div>
+    </div>
+  </main>
+</div>
+<div class="drawer" id="drawer"><div class="dh"><b>技术选型报告</b><button class="btn">下载 .md</button><button class="btn p">下载 .docx</button><button class="icon" data-close>✕</button></div><div class="db" id="dbody"></div></div>
+
+<script src="shared/mock.js"></script>
+<script>
+const { sessions, STATUS, SOURCE, util: U } = MOCK
+let cur = sessions[0]
+
+function renderList() {
+  const groups = [['今天', sessions.filter((s) => s.updated !== '昨天')], ['昨天', sessions.filter((s) => s.updated === '昨天')]]
+  document.getElementById('slist').innerHTML = groups.map(([g, list]) => `<div class="grp">${g}</div>` + list.map((s) =>
+    `<div class="s ${s === cur ? 'on' : ''}" data-id="${s.thread_id}"><i class="i-${STATUS[s.status].tone}"></i><span>${U.esc(s.title)}</span></div>`).join('')).join('')
+}
+
+const steps = (s) => `<details class="steps"><summary>执行过程 · ${s.progress.length} 步 · ${U.ms(U.totalMs(s))}</summary>
+  <div class="stl">${s.progress.map((e) => `<div><span>${U.esc(e.label)}</span><span>${U.ms(e.duration_ms)}</span></div>`).join('')}</div></details>`
+
+const chips = (list) => `<div class="chips">${list.map((s) => `<div class="chip"><b>${s.id}</b><span>${U.esc(s.title)}</span>
+  <div class="tip">${U.esc(s.snippet)}<small>${SOURCE[s.source]} · ${U.esc(s.locator)}${s.score ? ' · 相关度 ' + s.score : ''}</small></div></div>`).join('')}</div>`
+
+const acts = '<div class="acts"><button title="复制">⧉ 复制</button><button title="重新生成">↻ 重试</button><button>👍</button><button>👎</button></div>'
+
+function botHtml() {
+  if (cur.status === 'running') {
+    const st = cur.progress.find((e) => e.status === 'running')
+    return `<div class="thinking"><span>◌</span><span class="shim">${st.label}…</span></div>`
+  }
+  if (cur.status === 'awaiting_user') {
+    return `<p>${U.esc(cur.answer)}</p><div class="clar">${cur.clarification_questions.map((q) =>
+      `<div class="qq"><div>${U.esc(q)}</div><input placeholder="输入你的回答…"></div>`).join('')}
+      <div class="ft"><button class="btn">跳过</button><button class="btn p">继续选型</button></div></div>`
+  }
+  if (cur.report_data) {
+    const r = cur.report_data, sorted = [...r.candidates].sort((a, b) => b.total - a.total)
+    return steps(cur) + `<p>${U.inline(cur.answer)}</p><div class="rcard"><div class="rh"><div class="ico">选</div><div><h3>${U.esc(r.decision.primary_candidate_name)}</h3>
+      <small>${r.decision.status_label} · 置信度${r.decision.confidence_label} · 证据覆盖 ${U.pct(r.decision.evidence_coverage)}</small></div></div>
+      <div class="rank">${sorted.map((c, i) => `<div><span style="color:var(--dim)">${i + 1}</span><span>${U.esc(c.name)}</span><span class="bb"><i style="width:${c.total / 5 * 100}%"></i></span><em>${c.total.toFixed(2)}</em></div>`).join('')}</div>
+      <div class="rf"><button class="btn p" data-open>查看完整报告</button><button class="btn">下载 .docx</button></div></div>
+      ${cur.warnings.map((w) => `<div class="warn">⚠ ${U.esc(w)}</div>`).join('')}` + acts
+  }
+  const body = cur.answer_blocks ? U.blocks(cur.answer_blocks) : `<p>${U.inline(cur.answer)}</p>`
+  return (cur.query_type === 'rag_qa' ? steps(cur) : '') + body + (cur.sources ? chips(cur.sources) : '') + acts
+}
+
+function renderMain() {
+  document.getElementById('ttl').textContent = cur ? cur.title : '新对话'
+  const send = document.getElementById('send')
+  send.className = 'send' + (cur && cur.status === 'running' ? ' stop' : ''); send.textContent = cur && cur.status === 'running' ? '■' : '↑'
+  if (!cur) {
+    document.getElementById('col').innerHTML = `<div class="hello"><h1>今天想研究什么？</h1><p>半导体工艺、器件、材料与封装的问答，或一次有证据支撑的技术选型</p>
+      <div class="sugg"><div><small>知识问答</small>High-NA EUV 相比常规 EUV 解决了哪些问题？</div><div><small>知识问答</small>铜互连电迁移失效的主要机理是什么？</div>
+      <div><small>技术选型</small>为车规 MCU 选择嵌入式非易失存储方案</div><div><small>技术选型</small>12 寸产线晶圆缺陷检测设备选型</div></div></div>`
+    return
+  }
+  let html = `<div class="u"><div>${U.esc(cur.query)}</div></div>`
+  ;(cur.clarification_history || []).forEach((x) => { html += `<div class="b"><p>${U.esc(x.q)}</p></div><div class="u"><div>${U.esc(x.a)}</div></div>` })
+  html += `<div class="b">${botHtml()}</div>`
+  document.getElementById('col').innerHTML = html
+}
+
+function renderDrawer() {
+  const r = cur && cur.report_data
+  if (!r) return
+  document.getElementById('dbody').innerHTML = `<div class="hero"><small>${r.decision.status_label}</small><b>${U.esc(r.decision.primary_candidate_name)}</b>${U.esc(r.decision.summary)}
+    <div class="st"><span>置信度 <strong>${r.decision.confidence_label}</strong></span><span>证据覆盖 <strong>${U.pct(r.decision.evidence_coverage)}</strong></span><span>${r.audit.review_label}</span></div></div>
+    <h4>推荐理由</h4><ul style="margin:0;padding-left:20px">${r.decision.rationale.map((x) => `<li>${U.inline(x)}</li>`).join('')}</ul>
+    <h4>评分对比（满分 5）</h4><table><tr><th>维度</th><th>权重</th>${r.candidates.map((c) => `<th>${U.esc(c.name)}</th>`).join('')}</tr>
+    ${r.comparison.map((row) => `<tr><td>${row.label}</td><td>${U.pct(row.weight)}</td>${row.cells.map((c) => `<td class="${c.confidence === '低' ? 'lo' : ''}" title="${U.esc(c.rationale)}">${c.score.toFixed(1)}</td>`).join('')}</tr>`).join('')}
+    <tr><td><b>加权总分</b></td><td></td>${r.candidates.map((c) => `<td><b>${c.total.toFixed(2)}</b></td>`).join('')}</tr></table>
+    <h4>风险</h4>${r.risks.map((k) => `<div class="rk"><span class="${k.severity}">${{ high: '高', medium: '中', low: '低' }[k.severity]}</span>${k.candidate_name} · ${k.category}：${U.esc(k.description)}</div>`).join('')}
+    <h4>证据缺口</h4>${r.evidence_gaps.map((g) => `<div class="rk">${U.esc(g)}</div>`).join('')}
+    <h4>引用证据</h4>${r.evidence.map((e) => `<div class="rk"><b>${e.evidence_id}</b> ${U.esc(e.title)} <span class="low">${SOURCE[e.source]}</span></div>`).join('')}
+    <h4>历史版本</h4>${cur.reports.map((x) => `<div class="rk">${x.title} · ${x.format} · ${x.created_at}</div>`).join('')}`
+}
+
+function render() { renderList(); renderMain(); renderDrawer() }
+const app = document.getElementById('app')
+document.getElementById('collapse').onclick = () => app.classList.add('collapsed')
+document.getElementById('expand').onclick = () => { app.classList.remove('collapsed'); app.classList.toggle('mobile-open') }
+document.getElementById('theme').onclick = () => {
+  const dark = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
+  document.documentElement.dataset.theme = dark ? 'light' : 'dark'
+}
+document.getElementById('modes').onclick = (e) => { if (e.target.tagName === 'BUTTON') { [...e.currentTarget.children].forEach((b) => b.classList.toggle('on', b === e.target)) } }
+document.addEventListener('click', (e) => {
+  const s = e.target.closest('[data-id]')
+  if (s) { cur = sessions.find((x) => x.thread_id === s.dataset.id); app.classList.remove('mobile-open'); render() }
+  if (e.target.closest('[data-new]')) { cur = null; render() }
+  if (e.target.closest('[data-open]')) document.getElementById('drawer').classList.add('open')
+  if (e.target.closest('[data-close]')) document.getElementById('drawer').classList.remove('open')
+})
+render()
+</script>
+</body>
+</html>

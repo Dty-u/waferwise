@@ -165,9 +165,11 @@ pip install -r requirements.txt
 ```bash
 DEEPSEEK_API_KEY=xxx          # 主 LLM（DeepSeek）
 ZHIPU_API_KEY=xxx             # Embedding（智谱）
+SILICONFLOW_API_KEY=xxx       # 精排 Reranker（硅基流动）
 NEO4J_PASSWORD=xxx            # 图数据库密码
 MYSQL_CHECKPOINT_URI=xxx      # 检查点（如 mysql+pymysql://user:pass@host/checkpoint_db）
 MYSQL_MEMORY_URI=xxx          # 长期记忆仓库
+API_CORS_ORIGINS=...          # 可选，逗号分隔的前端来源，默认含 localhost:3000/5173
 ```
 
 非敏感配置（模型、检索参数、轮次上限等）位于 `src/config/config.yaml`。
