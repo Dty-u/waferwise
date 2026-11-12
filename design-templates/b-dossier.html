@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>B · 研究报告</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;900&family=Noto+Sans+SC:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f5f1e8; --sheet: #fbf9f4; --ink: #1d1b17; --ink-2: #4a463e; --muted: #8a8478; --rule: #d9d2c3; --rule-2: #c4bba8;
+    --accent: #9b2f1c; --accent-soft: #f0dcd4; --ok: #2f6b4f; --warn: #b07a12;
+    --serif: 'Noto Serif SC', 'Songti SC', serif; --sans: 'Noto Sans SC', system-ui, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --paper: #17150f; --sheet: #1d1b15; --ink: #ece6d8; --ink-2: #c0b9a8; --muted: #8a8374; --rule: #36322a; --rule-2: #4a4539; --accent: #e07a5f; --accent-soft: #3a2620; --ok: #7cc39f; --warn: #e0b04a; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.75 var(--sans); }
+  button, input, textarea { font: inherit; color: inherit; }
+  .wrap { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  nav { border-right: 1px solid var(--rule); padding: 28px 20px; position: sticky; top: 0; height: 100vh; overflow: auto; }
+  .logo { font: 900 20px/1.2 var(--serif); letter-spacing: .04em; }
+  .logo small { display: block; font: 500 11px var(--mono); color: var(--muted); letter-spacing: .14em; margin-top: 6px; }
+  .proj { margin: 24px 0 18px; padding: 10px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); font-size: 12px; color: var(--muted); }
+  .proj b { display: block; color: var(--ink); font-weight: 500; font-size: 13px; }
+  .new { width: 100%; background: var(--ink); color: var(--sheet); border: 0; padding: 9px; font-size: 13px; cursor: pointer; margin-bottom: 20px; }
+  .idx-h { font: 500 11px var(--mono); color: var(--muted); letter-spacing: .14em; margin-bottom: 8px; }
+  .idx a { display: grid; grid-template-columns: 26px 1fr; gap: 4px; padding: 8px 0; border-bottom: 1px dotted var(--rule-2); text-decoration: none; color: var(--ink-2); font-size: 13px; line-height: 1.5; cursor: pointer; }
+  .idx a .no { font: 12px var(--mono); color: var(--muted); }
+  .idx a small { display: block; font: 11px var(--mono); color: var(--muted); }
+  .idx a.on { color: var(--ink); } .idx a.on .no { color: var(--accent); }
+  .idx a .st-warn { color: var(--warn); } .idx a .st-info { color: var(--accent); }
+
+  .stage { padding: 40px 48px 140px; }
+  .sheet { max-width: 1060px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) 240px; column-gap: 48px; }
+  .full { grid-column: 1 / -1; }
+  .mast { display: flex; justify-content: space-between; font: 12px var(--mono); color: var(--muted); border-bottom: 3px double var(--ink); padding-bottom: 10px; letter-spacing: .06em; }
+  .kicker { font: 500 12px var(--mono); color: var(--accent); letter-spacing: .14em; margin: 32px 0 10px; }
+  h1 { font: 600 30px/1.4 var(--serif); margin: 0 0 18px; }
+  .ask { font-size: 14px; color: var(--ink-2); border-left: 3px solid var(--accent); padding: 2px 0 2px 14px; margin-bottom: 28px; }
+  .verdict { display: grid; grid-template-columns: 1fr auto; gap: 24px; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 22px 0; margin-bottom: 8px; }
+  .verdict .lab { font: 500 12px var(--mono); color: var(--muted); letter-spacing: .1em; }
+  .verdict .nm { font: 900 34px/1.25 var(--serif); margin: 6px 0 10px; }
+  .verdict .nm em { font-style: normal; color: var(--accent); }
+  .verdict p { margin: 0; color: var(--ink-2); }
+  .meters { display: flex; gap: 28px; align-items: flex-end; }
+  .meter { text-align: center; }
+  .meter b { font: 600 36px/1 var(--serif); display: block; }
+  .meter small { font: 11px var(--mono); color: var(--muted); }
+  .stamp { border: 2px solid var(--ok); color: var(--ok); font: 600 12px var(--mono); padding: 4px 10px; transform: rotate(-4deg); letter-spacing: .1em; align-self: center; }
+  h2 { font: 600 19px var(--serif); margin: 40px 0 14px; display: flex; gap: 12px; align-items: baseline; }
+  h2 span { font: 500 12px var(--mono); color: var(--accent); }
+  .side { font-size: 12px; color: var(--muted); line-height: 1.6; padding-top: 4px; }
+  .side .note { border-top: 1px solid var(--rule); padding: 10px 0; }
+  .side .note b { font: 500 11px var(--mono); color: var(--accent); margin-right: 4px; }
+  .side .note i { font-style: normal; color: var(--ink-2); display: block; margin-bottom: 2px; }
+  .cons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .cons span { border: 1px solid var(--rule-2); padding: 3px 10px; font-size: 13px; background: var(--sheet); }
+  .wbar { display: flex; height: 34px; border: 1px solid var(--ink); }
+  .wbar div { border-right: 1px solid var(--ink); padding: 0 8px; font-size: 12px; display: flex; align-items: center; justify-content: space-between; gap: 4px; overflow: hidden; white-space: nowrap; }
+  .wbar div:last-child { border-right: 0; }
+  .wbar div b { font: 500 11px var(--mono); }
+  .inactive { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .cands { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--ink); }
+  .cand { padding: 16px 16px 16px 0; border-right: 1px solid var(--rule); }
+  .cand + .cand { padding-left: 16px; } .cand:last-child { border-right: 0; }
+  .cand .tot { font: 600 40px/1 var(--serif); }
+  .cand.win .tot { color: var(--accent); }
+  .cand h3 { font: 600 16px var(--serif); margin: 10px 0 2px; }
+  .cand small { font: 11px var(--mono); color: var(--muted); }
+  .cand p { font-size: 13px; color: var(--ink-2); margin: 8px 0 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { font: 500 11px var(--mono); color: var(--muted); text-align: left; letter-spacing: .06em; border-bottom: 1px solid var(--ink); padding: 8px 6px; }
+  td { border-bottom: 1px solid var(--rule); padding: 9px 6px; vertical-align: top; }
+  td.s { font: 500 14px var(--mono); text-align: center; width: 16%; }
+  td.s small { display: block; font: 11px var(--sans); color: var(--muted); font-weight: 400; line-height: 1.4; margin-top: 2px; }
+  td.low { outline: 1px dashed var(--warn); outline-offset: -3px; }
+  .sev { font: 500 11px var(--mono); }
+  .sev.high { color: var(--accent); } .sev.medium { color: var(--warn); } .sev.low { color: var(--muted); }
+  .gap { background: var(--accent-soft); padding: 12px 16px; font-size: 13px; margin-top: 16px; }
+  .gap b { font: 500 11px var(--mono); color: var(--accent); letter-spacing: .1em; }
+  .audit { margin-top: 40px; border-top: 3px double var(--ink); padding-top: 12px; display: flex; flex-wrap: wrap; gap: 24px; font: 12px var(--mono); color: var(--muted); }
+  .audit a { color: var(--accent); }
+  .article p, .article li { font-family: var(--serif); font-size: 16px; line-height: 1.95; }
+  .article > p:first-child::first-letter { font: 900 48px/1 var(--serif); float: left; margin: 6px 8px 0 0; color: var(--accent); }
+  .cite { font: 500 10px var(--mono); color: var(--accent); vertical-align: super; line-height: 0; margin: 0 1px; }
+  .form { border: 1px solid var(--ink); background: var(--sheet); }
+  .form .row { display: grid; grid-template-columns: 52px 1fr; border-bottom: 1px solid var(--rule); }
+  .form .row:last-child { border-bottom: 0; }
+  .form .n { font: 600 22px var(--serif); color: var(--accent); padding: 14px; border-right: 1px solid var(--rule); }
+  .form label { display: block; padding: 14px 16px 0; font-size: 14px; }
+  .form input { width: calc(100% - 32px); margin: 8px 16px 14px; border: 0; border-bottom: 1px solid var(--rule-2); background: transparent; padding: 6px 0; outline: none; font-family: var(--serif); }
+  .form input:focus { border-bottom-color: var(--accent); }
+  .actions { display: flex; gap: 12px; margin-top: 16px; }
+  .b1 { background: var(--accent); color: #fff; border: 0; padding: 9px 18px; cursor: pointer; }
+  .b2 { background: transparent; border: 1px solid var(--ink); padding: 9px 18px; cursor: pointer; }
+  .press { font-family: var(--serif); }
+  .press li { display: grid; grid-template-columns: 1fr auto; padding: 8px 0; border-bottom: 1px dotted var(--rule-2); list-style: none; }
+  .press ol { padding: 0; margin: 0; }
+  .press li.run { color: var(--accent); }
+  .press li.run::after { content: '排版中…'; font: 12px var(--mono); animation: blink 1s infinite; }
+  .press li span { font: 12px var(--mono); color: var(--muted); }
+  @keyframes blink { 50% { opacity: .2; } }
+  .dock { position: fixed; left: 240px; right: 0; bottom: 0; padding: 16px 48px 22px; background: linear-gradient(transparent, var(--paper) 30%); }
+  .dock .in { max-width: 1060px; margin: 0 auto; display: flex; border: 1px solid var(--ink); background: var(--sheet); }
+  .dock input { flex: 1; border: 0; background: transparent; padding: 12px 16px; outline: none; }
+  .dock button { border: 0; border-left: 1px solid var(--ink); background: var(--ink); color: var(--sheet); padding: 0 22px; cursor: pointer; }
+  @media (max-width: 1000px) { .sheet { grid-template-columns: 1fr; } .side { display: none; } }
+  @media (max-width: 760px) { .wrap { grid-template-columns: 1fr; } nav { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--rule); } .idx { display: flex; overflow: auto; gap: 16px; } .idx a { min-width: 160px; } .stage { padding: 24px 16px 140px; } .dock { left: 0; padding: 12px 16px; } .cands { grid-template-columns: 1fr; } .cand, .cand + .cand { padding: 14px 0; border-right: 0; border-bottom: 1px solid var(--rule); } .verdict { grid-template-columns: 1fr; } .wbar div b { display: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <div class="logo">晶圆智选<small>DECISION DOSSIER</small></div>
+    <div class="proj">项目<b id="proj"></b></div>
+    <button class="new">撰写新问题</button>
+    <div class="idx-h">卷宗目录</div>
+    <div class="idx" id="idx"></div>
+  </nav>
+  <div class="stage"><div class="sheet" id="sheet"></div></div>
+  <div class="dock"><div class="in"><input placeholder="追问、补充约束，或开启新的选型…"><button>提交</button></div></div>
+</div>
+<script src="shared/mock.js"></script>
+<script>
+const { sessions, STATUS, TYPE, SOURCE, project, util: U } = MOCK
+let cur = sessions[0]
+
+function renderIdx() {
+  document.getElementById('proj').textContent = project.name
+  document.getElementById('idx').innerHTML = sessions.map((s, i) => {
+    const st = STATUS[s.status]
+    return `<a class="${s === cur ? 'on' : ''}" data-id="${s.thread_id}"><span class="no">${String(i + 1).padStart(2, '0')}</span>
+      <span>${U.esc(s.title)}<small>${TYPE[s.query_type].short} · <span class="st-${st.tone}">${st.label}</span></small></span></a>`
+  }).join('')
+}
+
+const mast = (kind) => `<div class="mast full"><span>${kind}</span><span>${project.project_id} · ${cur.thread_id}</span><span>${cur.updated}</span></div>`
+
+function selection() {
+  const r = cur.report_data, d = r.decision
+  const top = Math.max(...r.candidates.map((c) => c.total))
+  const notes = r.evidence.map((e) => `<div class="note"><b>${e.evidence_id}</b><i>${U.esc(e.title)}</i>${SOURCE[e.source]} · ${U.esc(e.criterion)}</div>`).join('')
+  const clar = cur.clarification_history.map((x) => `<div class="note"><i>${U.esc(x.q)}</i>${U.esc(x.a)}</div>`).join('')
+  return mast('技术选型报告 · 第 2 版') + `
+  <div class="full"><div class="kicker">TECHNOLOGY SELECTION</div><h1>${U.esc(r.requirements.business_goal)}</h1>
+    <div class="ask">${U.esc(cur.query)}</div>
+    <div class="verdict"><div><div class="lab">结论 · ${d.status_label}</div><div class="nm"><em>${U.esc(d.primary_candidate_name)}</em></div><p>${U.esc(d.summary)}</p></div>
+      <div class="meters"><div class="meter"><b>${d.confidence_label}</b><small>置信度</small></div><div class="meter"><b>${U.pct(d.evidence_coverage)}</b><small>证据覆盖</small></div><div class="stamp">${r.audit.review_label}</div></div></div></div>
+  <div><h2><span>01</span>需求与约束</h2>
+    <div class="cons">${r.requirements.hard_constraints.map((c) => `<span>${U.esc(c)}</span>`).join('')}</div>
+    <div class="wbar">${r.requirements.active_criteria.map((c, i) => `<div style="flex:${c.weight};background:color-mix(in srgb, var(--accent) ${40 - i * 8}%, var(--sheet))">${c.label}<b>${U.pct(c.weight)}</b></div>`).join('')}</div>
+    <div class="inactive">未纳入评分：${r.requirements.inactive_criteria.map((c) => c.label).join('、')}</div></div>
+  <div class="side"><div class="note"><b>澄清记录</b></div>${clar}</div>
+  <div class="full"><h2><span>02</span>候选方案</h2><div class="cands">${r.candidates.map((c) => `<div class="cand ${c.total === top ? 'win' : ''}">
+    <div class="tot">${c.total.toFixed(2)}</div><h3>${U.esc(c.name)}</h3><small>${c.tag}</small><p>${U.esc(c.summary)}</p></div>`).join('')}</div></div>
+  <div><h2><span>03</span>逐项评分</h2><table><tr><th>维度 / 权重</th>${r.candidates.map((c) => `<th style="text-align:center">${U.esc(c.name)}</th>`).join('')}</tr>
+    ${r.comparison.map((row) => `<tr><td>${row.label}<br><small style="font:11px var(--mono);color:var(--muted)">${U.pct(row.weight)}</small></td>${row.cells.map((c) =>
+      `<td class="s ${c.confidence === '低' ? 'low' : ''}">${c.score.toFixed(1)}<small>${U.esc(c.rationale)}${c.evidence_ids.map((id) => `<sup class="cite">${id}</sup>`).join('')}</small></td>`).join('')}</tr>`).join('')}</table>
+    <div style="font-size:12px;color:var(--muted);margin-top:6px">虚线框：评分置信度为低</div>
+    <h2><span>04</span>风险登记</h2><table><tr><th>方案</th><th>类别</th><th>描述</th><th>等级</th><th>依据</th></tr>
+    ${r.risks.map((k) => `<tr><td>${k.candidate_name}</td><td>${k.category}</td><td>${U.esc(k.description)}</td><td class="sev ${k.severity}">${{ high: '高', medium: '中', low: '低' }[k.severity]}</td><td style="color:var(--muted)">${k.basis_label}</td></tr>`).join('')}</table>
+    <div class="gap"><b>证据缺口</b><br>${r.evidence_gaps.map((g) => '· ' + U.esc(g)).join('<br>')}</div>
+    <h2><span>05</span>实施前提</h2><ol style="margin:0;padding-left:20px">${d.prerequisites.map((p) => `<li>${U.esc(p)}</li>`).join('')}</ol></div>
+  <div class="side"><div class="note"><b>引用证据</b></div>${notes}</div>
+  <div class="audit full"><span>证据补检 ${r.audit.evidence_round}/3 轮</span><span>审查 ${r.audit.review_round}/2 轮</span><span>耗时 ${U.ms(U.totalMs(cur))}</span><span style="flex:1"></span>
+    ${cur.reports.map((x) => `<a href="#">${x.title}.${x.format === 'docx' ? 'docx' : 'md'} ↓</a>`).join('')}</div>`
+}
+
+function rag() {
+  const notes = (cur.sources || []).map((s) => `<div class="note"><b>[${s.id}]</b><i>${U.esc(s.title)}</i>${SOURCE[s.source]} · ${U.esc(s.locator)}<br>${U.esc(s.snippet)}</div>`).join('')
+  const body = cur.answer_blocks ? U.blocks(cur.answer_blocks) : `<p>${U.inline(cur.answer)}</p>`
+  return mast(TYPE[cur.query_type].label) + `<div class="full"><div class="kicker">${cur.query_type === 'rag_qa' ? 'KNOWLEDGE BRIEF' : 'NOTE'}</div><h1>${U.esc(cur.query)}</h1></div>
+    <div class="article">${body}</div><div class="side">${notes || '<div class="note">无需检索</div>'}</div>
+    <div class="audit full"><span>${cur.progress.length} 个阶段</span><span>耗时 ${U.ms(U.totalMs(cur))}</span><span>来源：${[...new Set((cur.sources || []).map((s) => SOURCE[s.source]))].join(' / ') || '—'}</span></div>`
+}
+
+function awaiting() {
+  return mast('需求问卷') + `<div class="full"><div class="kicker">CLARIFICATION</div><h1>${U.esc(cur.query)}</h1>
+    <p style="color:var(--ink-2)">${U.esc(cur.answer)}</p>
+    <div class="form">${cur.clarification_questions.map((q, i) => `<div class="row"><div class="n">${i + 1}</div><div><label>${U.esc(q)}</label><input placeholder="在此填写…"></div></div>`).join('')}</div>
+    <div class="actions"><button class="b1">提交并继续选型</button><button class="b2">按默认假设继续</button></div></div>`
+}
+
+function running() {
+  return mast('撰写中') + `<div class="full"><div class="kicker">IN PROGRESS</div><h1>${U.esc(cur.query)}</h1>
+    <div class="press"><ol>${cur.progress.map((e) => `<li class="${e.status === 'running' ? 'run' : ''}">${U.esc(e.label)}${e.status === 'running' ? '' : `<span>${U.ms(e.duration_ms)}</span>`}</li>`).join('')}</ol></div>
+    <div class="actions"><button class="b2">撤回请求</button></div></div>`
+}
+
+function render() {
+  renderIdx()
+  const html = cur.status === 'running' ? running() : cur.status === 'awaiting_user' ? awaiting()
+    : cur.query_type === 'technology_selection' ? selection() : rag()
+  document.getElementById('sheet').innerHTML = html
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('[data-id]')
+  if (a) { cur = sessions.find((s) => s.thread_id === a.dataset.id); render(); scrollTo(0, 0) }
+})
+render()
+</script>
+</body>
+</html>

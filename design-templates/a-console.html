@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A · 工程控制台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e13; --panel: #10161d; --panel-2: #151c25; --line: #1f2a36; --line-2: #2a3846;
+    --text: #d8e1ea; --muted: #7d8b99; --dim: #55626f;
+    --accent: #36d6a8; --accent-2: #f5b54a; --info: #5aa9ff; --warn: #f5b54a; --err: #ff6b6b; --ok: #36d6a8;
+    --mono: 'JetBrains Mono', ui-monospace, monospace; --sans: 'Noto Sans SC', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.6 var(--sans); }
+  button, input, textarea, select { font: inherit; color: inherit; }
+  .app { display: grid; grid-template: 48px 1fr / 264px 1fr 392px; height: 100vh; }
+  header { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; padding: 0 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  .brand { font-family: var(--mono); font-weight: 600; letter-spacing: .02em; display: flex; gap: 8px; align-items: center; }
+  .brand i { width: 10px; height: 10px; background: var(--accent); border-radius: 2px; box-shadow: 0 0 12px var(--accent); }
+  .crumbs { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .crumbs b { color: var(--text); font-weight: 400; }
+  .spacer { flex: 1; }
+  .health { font-family: var(--mono); font-size: 12px; color: var(--muted); display: flex; gap: 14px; }
+  .health span::before { content: '●'; color: var(--ok); margin-right: 6px; }
+  .health span.w::before { color: var(--warn); }
+
+  aside.side { border-right: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; }
+  .newbtn { margin: 12px; padding: 9px 12px; border: 1px dashed var(--line-2); border-radius: 6px; background: transparent; text-align: left; cursor: pointer; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+  .newbtn:hover { border-color: var(--accent); color: var(--accent); }
+  .filter { display: flex; gap: 4px; padding: 0 12px 8px; }
+  .filter button { flex: 1; background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 3px 0; font-size: 12px; color: var(--muted); cursor: pointer; }
+  .filter button.on { color: var(--text); border-color: var(--line-2); }
+  .list { overflow: auto; flex: 1; padding: 0 8px 12px; }
+  .item { padding: 10px; border-radius: 6px; cursor: pointer; border: 1px solid transparent; margin-bottom: 2px; }
+  .item:hover { background: var(--panel-2); }
+  .item.on { background: var(--panel-2); border-color: var(--line-2); }
+  .item .t { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item .m { display: flex; gap: 8px; font: 11px var(--mono); color: var(--dim); margin-top: 3px; align-items: center; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .tone-ok { color: var(--ok); } .tone-info { color: var(--info); } .tone-warn { color: var(--warn); } .tone-err { color: var(--err); } .tone-mute { color: var(--dim); }
+  .bg-ok { background: var(--ok); } .bg-info { background: var(--info); animation: pulse 1.2s infinite; } .bg-warn { background: var(--warn); } .bg-err { background: var(--err); } .bg-mute { background: var(--dim); }
+  @keyframes pulse { 50% { opacity: .3; } }
+  .me { border-top: 1px solid var(--line); padding: 10px 14px; font: 12px var(--mono); color: var(--muted); }
+
+  main { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+  .thead { padding: 14px 24px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px; }
+  .thead h1 { font-size: 15px; margin: 0; font-weight: 500; }
+  .chip { font: 11px var(--mono); padding: 2px 8px; border: 1px solid var(--line-2); border-radius: 999px; color: var(--muted); }
+  .chip.tone-ok { border-color: #1f5c4a; } .chip.tone-warn { border-color: #6b5222; } .chip.tone-info { border-color: #24456b; }
+  .thread { flex: 1; overflow: auto; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+  .msg { max-width: 760px; }
+  .msg .who { font: 11px var(--mono); color: var(--dim); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .08em; }
+  .msg.user .body { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+  .msg.bot .body p { margin: 0 0 10px; } .msg.bot .body ul { margin: 0 0 10px; padding-left: 20px; }
+  .cite { font: 10px var(--mono); color: var(--accent); background: rgba(54,214,168,.12); padding: 0 4px; border-radius: 3px; margin: 0 1px; cursor: pointer; }
+  .card { border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel); overflow: hidden; }
+  .card .hd { padding: 10px 14px; border-bottom: 1px solid var(--line); font: 12px var(--mono); color: var(--muted); display: flex; justify-content: space-between; }
+  .card .bd { padding: 14px; }
+  .decision { display: grid; grid-template-columns: 1fr auto auto; gap: 18px; align-items: center; }
+  .decision .name { font-size: 18px; font-weight: 700; }
+  .kpi { font-family: var(--mono); text-align: right; }
+  .kpi b { display: block; font-size: 20px; color: var(--accent); font-weight: 600; }
+  .kpi small { color: var(--dim); font-size: 11px; }
+  .clar { display: grid; gap: 12px; }
+  .clar label { display: block; font-size: 13px; margin-bottom: 6px; }
+  .clar label span { font: 11px var(--mono); color: var(--warn); margin-right: 6px; }
+  .clar input { width: 100%; background: var(--bg); border: 1px solid var(--line-2); border-radius: 6px; padding: 8px 10px; }
+  .clar input:focus { outline: none; border-color: var(--accent); }
+  .btn { background: var(--accent); color: #062018; border: 0; border-radius: 6px; padding: 7px 14px; font-weight: 500; cursor: pointer; }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line-2); }
+  .btn.danger { background: transparent; color: var(--err); border: 1px solid #5a2a2a; }
+  .live { display: flex; align-items: center; gap: 12px; font-family: var(--mono); font-size: 13px; }
+  .spin { width: 14px; height: 14px; border: 2px solid var(--line-2); border-top-color: var(--info); border-radius: 50%; animation: r 0.8s linear infinite; }
+  @keyframes r { to { transform: rotate(360deg); } }
+  .qa { font-size: 13px; color: var(--muted); border-left: 2px solid var(--line-2); padding-left: 12px; }
+  .qa b { color: var(--text); font-weight: 500; }
+
+  .composer { border-top: 1px solid var(--line); padding: 12px 24px 16px; }
+  .cbox { border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel); }
+  .cbox textarea { width: 100%; background: transparent; border: 0; resize: none; padding: 12px 14px 4px; min-height: 52px; outline: none; }
+  .cbar { display: flex; gap: 8px; align-items: center; padding: 6px 10px 8px; font: 12px var(--mono); color: var(--dim); }
+  .cbar select { background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 2px 6px; font-size: 12px; }
+  .kbd { border: 1px solid var(--line-2); border-radius: 3px; padding: 0 4px; }
+
+  aside.insp { border-left: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; }
+  .tabs { display: flex; border-bottom: 1px solid var(--line); }
+  .tabs button { flex: 1; background: none; border: 0; border-bottom: 2px solid transparent; padding: 12px 0; font-size: 13px; color: var(--muted); cursor: pointer; }
+  .tabs button.on { color: var(--text); border-bottom-color: var(--accent); }
+  .ipanel { overflow: auto; flex: 1; padding: 16px; }
+  .trace { font-family: var(--mono); font-size: 12px; }
+  .trow { display: grid; grid-template-columns: 14px 1fr 54px; gap: 8px; align-items: center; padding: 5px 0; }
+  .trow .lbl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--sans); }
+  .trow .bar { grid-column: 2 / 3; height: 3px; background: var(--line); border-radius: 2px; margin-top: -2px; }
+  .trow .bar i { display: block; height: 100%; border-radius: 2px; background: var(--accent); opacity: .7; }
+  .trow .d { text-align: right; color: var(--muted); }
+  .scope { font-size: 10px; color: var(--dim); letter-spacing: .1em; text-transform: uppercase; margin: 12px 0 2px; }
+  .sum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+  .sum div { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+  .sum b { display: block; font: 600 16px var(--mono); }
+  .sum small { color: var(--dim); font-size: 11px; }
+  .src { border: 1px solid var(--line); border-radius: 6px; padding: 10px; margin-bottom: 8px; background: var(--panel-2); }
+  .src .h { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+  .src .n { font: 11px var(--mono); color: var(--accent); }
+  .src .k { font: 10px var(--mono); padding: 1px 6px; border-radius: 3px; background: var(--line); color: var(--muted); margin-left: auto; white-space: nowrap; }
+  .src p { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+  .src.hl { border-color: var(--accent); }
+  .sect { font: 11px var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .1em; margin: 16px 0 8px; }
+  .score { display: grid; grid-template-columns: 1fr 110px 36px; gap: 10px; align-items: center; font-size: 13px; padding: 4px 0; }
+  .score .b { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .score .b i { display: block; height: 100%; background: var(--dim); }
+  .score.top .b i { background: var(--accent); }
+  .score .v { font: 12px var(--mono); text-align: right; }
+  table.mx { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .mx th, .mx td { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: center; }
+  .mx th:first-child, .mx td:first-child { text-align: left; color: var(--muted); }
+  .mx td.c { font-family: var(--mono); }
+  .risk { display: grid; grid-template-columns: 46px 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+  .sev { font: 10px var(--mono); text-align: center; border-radius: 3px; padding: 1px 0; height: fit-content; }
+  .sev.high { background: rgba(255,107,107,.15); color: var(--err); } .sev.medium { background: rgba(245,181,74,.15); color: var(--warn); } .sev.low { background: var(--line); color: var(--muted); }
+  .dl { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; margin-bottom: 6px; font-size: 13px; }
+  .dl small { font: 11px var(--mono); color: var(--dim); }
+  .dl a { margin-left: auto; color: var(--accent); font: 12px var(--mono); text-decoration: none; }
+  .empty { color: var(--dim); font-size: 13px; padding: 24px 0; text-align: center; }
+  @media (max-width: 1180px) { .app { grid-template-columns: 220px 1fr 330px; } }
+  @media (max-width: 900px) { .app { grid-template-columns: 1fr; grid-template-rows: 48px auto 1fr auto; } aside.side { display: none; } aside.insp { max-height: 45vh; border-left: 0; border-top: 1px solid var(--line); } .health { display: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><i></i>WAFER/DECISION</div>
+    <div class="crumbs" id="crumbs"></div>
+    <div class="spacer"></div>
+    <div class="health"><span>api</span><span>milvus</span><span>neo4j</span><span class="w">tavily</span></div>
+  </header>
+
+  <aside class="side">
+    <button class="newbtn">+ 新会话 <span style="float:right">Ctrl N</span></button>
+    <div class="filter" id="filter"></div>
+    <div class="list" id="list"></div>
+    <div class="me" id="me"></div>
+  </aside>
+
+  <main>
+    <div class="thead" id="thead"></div>
+    <div class="thread" id="thread"></div>
+    <div class="composer">
+      <div class="cbox">
+        <textarea placeholder="提问或描述选型需求，系统会自动识别类型…"></textarea>
+        <div class="cbar">
+          <span>报告格式</span>
+          <select><option>markdown</option><option>docx</option></select>
+          <span class="spacer"></span>
+          <span><span class="kbd">Enter</span> 发送 · <span class="kbd">Shift+Enter</span> 换行</span>
+          <button class="btn">发送</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <aside class="insp">
+    <div class="tabs" id="tabs"></div>
+    <div class="ipanel" id="ipanel"></div>
+  </aside>
+</div>
+
+<script src="shared/mock.js"></script>
+<script>
+const { sessions, STATUS, TYPE, SOURCE, project, util: U } = MOCK
+let cur = sessions[0], tab = 'trace', filter = 'all'
+
+function renderList() {
+  const filters = [['all', '全部'], ['rag_qa', '问答'], ['technology_selection', '选型']]
+  document.getElementById('filter').innerHTML = filters.map(([k, v]) =>
+    `<button class="${filter === k ? 'on' : ''}" data-f="${k}">${v}</button>`).join('')
+  document.getElementById('list').innerHTML = sessions
+    .filter((s) => filter === 'all' || s.query_type === filter)
+    .map((s) => {
+      const st = STATUS[s.status]
+      return `<div class="item ${s === cur ? 'on' : ''}" data-id="${s.thread_id}">
+        <div class="t">${U.esc(s.title)}</div>
+        <div class="m"><span class="dot bg-${st.tone}"></span>${TYPE[s.query_type].short}<span>·</span>${s.updated}</div>
+      </div>`
+    }).join('')
+  document.getElementById('me').textContent = `${project.user_id} @ ${project.api}`
+}
+
+function renderHead() {
+  const st = STATUS[cur.status]
+  document.getElementById('crumbs').innerHTML = `${project.project_id} / <b>${cur.thread_id}</b>`
+  document.getElementById('thead').innerHTML = `<h1>${U.esc(cur.title)}</h1>
+    <span class="chip">${TYPE[cur.query_type].label}</span>
+    <span class="chip tone-${st.tone}">${st.label}</span>
+    <span class="spacer" style="flex:1"></span>
+    ${cur.status === 'running' ? '<button class="btn danger">取消运行</button>' : '<button class="btn ghost">关闭会话</button>'}`
+}
+
+function botCard() {
+  if (cur.status === 'running') {
+    const st = cur.progress.find((e) => e.status === 'running')
+    return `<div class="card"><div class="bd live"><div class="spin"></div>
+      <span>${st.label}</span><span style="color:var(--dim)">· 第 ${cur.progress.length} 步 · 已用 ${U.ms(U.totalMs(cur))}</span></div></div>`
+  }
+  if (cur.status === 'awaiting_user') {
+    return `<div class="body"><p>${U.inline(cur.answer)}</p></div>
+      <div class="card"><div class="hd"><span>需求澄清 · ${cur.clarification_questions.length} 个问题</span><span class="tone-warn">awaiting_user</span></div>
+      <div class="bd clar">${cur.clarification_questions.map((q, i) =>
+        `<div><label><span>Q${i + 1}</span>${U.esc(q)}</label><input placeholder="输入回答，可跳过"></div>`).join('')}
+      <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn ghost">跳过，按默认假设继续</button><button class="btn">提交回答</button></div></div></div>`
+  }
+  if (cur.query_type === 'technology_selection') {
+    const r = cur.report_data
+    return `<div class="body"><p>${U.inline(cur.answer)}</p></div>
+      <div class="card"><div class="hd"><span>DECISION · ${r.decision.status_label}</span><span>${r.audit.review_label}</span></div>
+      <div class="bd"><div class="decision">
+        <div><div class="name">${U.esc(r.decision.primary_candidate_name)}</div><div style="color:var(--muted);font-size:13px;margin-top:4px">${U.esc(r.decision.summary)}</div></div>
+        <div class="kpi"><b>${r.decision.confidence_label}</b><small>置信度</small></div>
+        <div class="kpi"><b>${U.pct(r.decision.evidence_coverage)}</b><small>证据覆盖</small></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" data-tab="report">查看报告</button><button class="btn ghost">下载 .docx</button></div></div></div>`
+  }
+  return `<div class="body">${cur.answer_blocks ? U.blocks(cur.answer_blocks) : `<p>${U.inline(cur.answer)}</p>`}</div>`
+}
+
+function renderThread() {
+  let html = `<div class="msg user"><div class="who">you</div><div class="body">${U.esc(cur.query)}</div></div>`
+  if (cur.clarification_history) {
+    html += `<div class="msg"><div class="who">clarification</div>${cur.clarification_history.map((x) =>
+      `<div class="qa"><div>${U.esc(x.q)}</div><b>${U.esc(x.a)}</b></div>`).join('<div style="height:8px"></div>')}</div>`
+  }
+  html += `<div class="msg bot"><div class="who">agent · ${TYPE[cur.query_type].label}</div>${botCard()}</div>`
+  document.getElementById('thread').innerHTML = html
+}
+
+function traceHtml() {
+  const max = Math.max(...cur.progress.map((e) => e.duration_ms || 0))
+  let lastScope = ''
+  const names = { router: '主路由', rag: '普通问答', selection: '技术选型' }
+  const rows = cur.progress.map((e) => {
+    const tone = { completed: 'ok', running: 'info', paused: 'warn', error: 'err' }[e.status]
+    const head = e.scope !== lastScope ? `<div class="scope">${names[e.scope]}</div>` : ''
+    lastScope = e.scope
+    return head + `<div class="trow"><span class="dot bg-${tone}"></span><span class="lbl">${U.esc(e.label)}</span><span class="d">${U.ms(e.duration_ms)}</span>
+      <div class="bar"><i style="width:${e.duration_ms ? (e.duration_ms / max) * 100 : 8}%"></i></div></div>`
+  }).join('')
+  return `<div class="sum"><div><b>${cur.progress.length}</b><small>阶段</small></div><div><b>${U.ms(U.totalMs(cur))}</b><small>总耗时</small></div>
+    <div><b class="tone-${STATUS[cur.status].tone}">${STATUS[cur.status].label}</b><small>状态</small></div></div><div class="trace">${rows}</div>`
+}
+
+function sourcesHtml() {
+  const list = cur.sources || (cur.report_data && cur.report_data.evidence.map((e) => ({ id: e.evidence_id, source: e.source, title: e.title, snippet: e.snippet, locator: e.criterion })))
+  if (!list) return '<div class="empty">本次会话没有检索来源</div>'
+  return list.map((s) => `<div class="src" data-src="${s.id}"><div class="h"><span class="n">[${s.id}]</span><span>${U.esc(s.title)}</span><span class="k">${SOURCE[s.source]}</span></div>
+    <p>${U.esc(s.snippet)}</p><p style="font:11px var(--mono);color:var(--dim)">${U.esc(s.locator || '')}${s.score ? ' · 相关度 ' + s.score : ''}</p></div>`).join('')
+}
+
+function reportHtml() {
+  const r = cur.report_data
+  if (!r) return '<div class="empty">该会话未生成选型报告</div>'
+  const top = Math.max(...r.candidates.map((c) => c.total))
+  return `<div class="sect">加权总分</div>${r.candidates.map((c) => `<div class="score ${c.total === top ? 'top' : ''}"><span>${U.esc(c.name)}</span>
+      <span class="b"><i style="width:${c.total / 5 * 100}%"></i></span><span class="v">${c.total.toFixed(2)}</span></div>`).join('')}
+    <div class="sect">评分矩阵</div><table class="mx"><tr><th>维度</th><th>权重</th>${r.candidates.map((c) => `<th>${c.candidate_id.toUpperCase()}</th>`).join('')}</tr>
+      ${r.comparison.map((row) => `<tr><td>${row.label}</td><td class="c">${U.pct(row.weight)}</td>${row.cells.map((c) =>
+        `<td class="c" title="${U.esc(c.rationale)}" style="color:${c.confidence === '低' ? 'var(--warn)' : 'var(--text)'}">${c.score.toFixed(1)}</td>`).join('')}</tr>`).join('')}</table>
+    <div class="sect">风险 · ${r.risks.length}</div>${r.risks.map((k) => `<div class="risk"><span class="sev ${k.severity}">${k.severity.toUpperCase()}</span>
+      <div><b style="font-weight:500">${k.candidate_name}</b> · ${k.category}<br><span style="color:var(--muted)">${U.esc(k.description)}</span></div></div>`).join('')}
+    <div class="sect">证据缺口</div>${r.evidence_gaps.map((g) => `<div style="font-size:12px;color:var(--warn);padding:3px 0">△ ${U.esc(g)}</div>`).join('')}
+    <div class="sect">审计</div><div style="font:12px var(--mono);color:var(--muted)">补检轮次 ${r.audit.evidence_round}/3 · 审查轮次 ${r.audit.review_round}/2 · ${r.audit.review_label}</div>
+    <div class="sect">历史报告</div>${cur.reports.map((x) => `<div class="dl"><span>${x.title}</span><small>${x.format} · ${x.created_at}</small><a href="#">下载 ↓</a></div>`).join('')}`
+}
+
+function renderInsp() {
+  const tabs = [['trace', '执行轨迹'], ['sources', '证据来源'], ['report', '选型报告']]
+  document.getElementById('tabs').innerHTML = tabs.map(([k, v]) => `<button class="${tab === k ? 'on' : ''}" data-tab="${k}">${v}</button>`).join('')
+  document.getElementById('ipanel').innerHTML = tab === 'trace' ? traceHtml() : tab === 'sources' ? sourcesHtml() : reportHtml()
+}
+
+function render() { renderList(); renderHead(); renderThread(); renderInsp() }
+
+document.addEventListener('click', (e) => {
+  const item = e.target.closest('[data-id]'); const t = e.target.closest('[data-tab]')
+  const f = e.target.closest('[data-f]'); const c = e.target.closest('.cite')
+  if (item) { cur = sessions.find((s) => s.thread_id === item.dataset.id); tab = 'trace'; render() }
+  else if (t) { tab = t.dataset.tab; renderInsp() }
+  else if (f) { filter = f.dataset.f; renderList() }
+  else if (c) {
+    tab = 'sources'; renderInsp()
+    const el = document.querySelector(`[data-src="${c.dataset.ref}"]`)
+    if (el) { el.classList.add('hl'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }) }
+  }
+})
+render()
+</script>
+</body>
+</html>

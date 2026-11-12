@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C · 流程画布</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eef2f6; --grid: #dde4ec; --panel: #ffffff; --line: #d3dbe4; --text: #18222d; --muted: #66768a; --dim: #a3afbd;
+    --accent: #1667e8; --accent-soft: #e3edfd; --ok: #14936b; --ok-soft: #dcf3ea; --warn: #c27a06; --warn-soft: #fbeed3; --err: #d13b3b;
+    --sans: 'Space Grotesk', 'Noto Sans SC', system-ui, sans-serif; --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #0d141c; --grid: #16212d; --panel: #121b25; --line: #233142; --text: #e2e9f1; --muted: #8597ab; --dim: #4b5b6d; --accent: #5b9dff; --accent-soft: #15284a; --ok: #3ccf9b; --ok-soft: #10302a; --warn: #f0b03c; --warn-soft: #33270f; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.55 var(--sans); }
+  button, input { font: inherit; color: inherit; }
+  header { display: flex; align-items: center; gap: 18px; padding: 12px 20px; background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
+  .logo { font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
+  .logo span { color: var(--accent); }
+  .tabs { display: flex; gap: 6px; overflow: auto; flex: 1; }
+  .tab { white-space: nowrap; border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 4px 12px 4px 10px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .tab.on { border-color: var(--accent); background: var(--accent-soft); }
+  .tab i { width: 7px; height: 7px; border-radius: 50%; }
+  .t-ok { background: var(--ok); } .t-info { background: var(--accent); animation: pulse 1s infinite; } .t-warn { background: var(--warn); } .t-mute { background: var(--dim); } .t-err { background: var(--err); }
+  @keyframes pulse { 50% { opacity: .3; } }
+  .newb { border: 0; background: var(--accent); color: #fff; border-radius: 8px; padding: 6px 14px; cursor: pointer; white-space: nowrap; }
+
+  .canvas { margin: 16px 20px; background-color: var(--panel); background-image: radial-gradient(var(--grid) 1px, transparent 1px); background-size: 16px 16px; border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+  .chead { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .chead h1 { font-size: 16px; margin: 0; font-weight: 500; }
+  .chead .meta { font: 12px var(--mono); color: var(--muted); }
+  .ctrl { margin-left: auto; display: flex; gap: 6px; }
+  .ctrl button { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 4px 12px; cursor: pointer; font-size: 13px; }
+  .ctrl button.pri { border-color: var(--accent); color: var(--accent); }
+  .lane { margin-top: 14px; }
+  .lane-h { font: 500 11px var(--mono); color: var(--muted); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 8px; display: flex; gap: 10px; align-items: center; }
+  .loop { font: 11px var(--mono); border: 1px dashed var(--dim); border-radius: 999px; padding: 0 8px; letter-spacing: 0; text-transform: none; }
+  .loop.used { border-color: var(--warn); color: var(--warn); }
+  .flow { display: flex; align-items: center; overflow-x: auto; padding: 12px 8px 8px 2px; }
+  .col { display: flex; flex-direction: column; gap: 8px; }
+  .arrow { width: 18px; min-width: 14px; height: 2px; background: var(--line); position: relative; flex-shrink: 0; }
+  .arrow::after { content: ''; position: absolute; right: -1px; top: -4px; border: 5px solid transparent; border-left-color: var(--line); border-right: 0; }
+  .arrow.lit { background: var(--ok); } .arrow.lit::after { border-left-color: var(--ok); }
+  .node { width: 104px; flex-shrink: 0; border: 1.5px solid var(--line); background: var(--panel); border-radius: 10px; padding: 7px 9px; cursor: pointer; position: relative; transition: .2s; }
+  .node .l { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .node .d { font: 11px var(--mono); color: var(--dim); }
+  .node .v { position: absolute; top: -8px; right: -6px; font: 600 10px var(--mono); background: var(--warn); color: #fff; border-radius: 999px; padding: 0 6px; }
+  .node.pending { opacity: .55; border-style: dashed; }
+  .node.done { border-color: var(--ok); background: var(--ok-soft); } .node.done .d { color: var(--ok); }
+  .node.running { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
+  .node.running .d::before { content: '◐ '; display: inline-block; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .node.paused { border-color: var(--warn); background: var(--warn-soft); }
+  .node.sel { outline: 2px solid var(--text); outline-offset: 2px; }
+  .branch { font: 11px var(--mono); color: var(--muted); padding: 2px 10px; border-left: 2px solid var(--accent); margin: 8px 0 0 2px; }
+
+  .bottom { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; margin: 0 20px 20px; }
+  .box { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; min-width: 0; }
+  .box h2 { font: 500 11px var(--mono); color: var(--muted); letter-spacing: .12em; text-transform: uppercase; margin: 0 0 12px; }
+  .q { background: var(--bg); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; }
+  .a p { margin: 0 0 10px; } .a ul { padding-left: 20px; margin: 0 0 10px; }
+  .cite { font: 10px var(--mono); background: var(--accent-soft); color: var(--accent); border-radius: 4px; padding: 0 4px; }
+  .res { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0; }
+  .res > div { border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+  .res > div.win { border-color: var(--accent); background: var(--accent-soft); }
+  .res b { font: 700 22px var(--sans); display: block; }
+  .res small { color: var(--muted); font-size: 12px; }
+  .res .bar { height: 4px; background: var(--line); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .res .bar i { display: block; height: 100%; background: var(--accent); }
+  .kv { display: grid; grid-template-columns: 100px 1fr; gap: 6px 12px; font-size: 13px; }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; }
+  .runs { margin-top: 12px; font: 12px var(--mono); }
+  .runs div { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--line); }
+  .field { margin-bottom: 10px; } .field label { font-size: 13px; display: block; margin-bottom: 4px; }
+  .field input { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; background: var(--bg); }
+  .pri-btn { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 7px 16px; cursor: pointer; }
+  .composer { display: flex; gap: 8px; margin-top: 14px; }
+  .composer input { flex: 1; border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; background: var(--bg); }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 6px; flex-wrap: wrap; }
+  .legend span::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; border: 1.5px solid var(--line); }
+  .legend .l1::before { border-color: var(--ok); background: var(--ok-soft); } .legend .l2::before { border-color: var(--accent); background: var(--accent-soft); }
+  .legend .l3::before { border-color: var(--warn); background: var(--warn-soft); } .legend .l4::before { border-style: dashed; }
+  @media (max-width: 900px) { .bottom { grid-template-columns: 1fr; } .canvas, .bottom { margin-left: 12px; margin-right: 12px; } header { flex-wrap: wrap; } .res { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Wafer<span>Flow</span></div>
+  <div class="tabs" id="tabs"></div>
+  <button class="newb">+ 新请求</button>
+</header>
+<section class="canvas">
+  <div class="chead"><h1 id="title"></h1><span class="meta" id="meta"></span>
+    <div class="ctrl"><button id="replay" class="pri">▶ 回放执行过程</button><button id="cancel">取消</button></div></div>
+  <div class="legend"><span class="l1">已完成</span><span class="l2">运行中</span><span class="l3">暂停 / 等待用户</span><span class="l4">未经过</span><span>右上角数字 = 重复执行次数</span></div>
+  <div id="lanes"></div>
+</section>
+<section class="bottom">
+  <div class="box" id="convo"></div>
+  <div class="box" id="detail"></div>
+</section>
+<script src="shared/mock.js"></script>
+<script>
+const { sessions, graph, STATUS, TYPE, util: U } = MOCK
+const LAYOUT = {
+  router: [['prepare_short_term_memory'], ['classify_query'], ['recall_memory'], ['invoke'], ['build_query_response'], ['persist_memory_candidates']],
+  rag: [['analyze_question'], ['vector_retrieve', 'graph_retrieve'], ['merge_retrieval_results'], ['grade_documents'], ['transform_query', 'web_search'], ['generate'], ['assess_generation']],
+  selection: [['parse_requirements', 'clarify_requirements'], ['generate_candidates'], ['screen_hard_constraints'], ['plan_evidence_tasks'], ['retrieve_evidence', 'optimize_evidence_queries'], ['evaluate_candidates'], ['analyze_risks'], ['generate_recommendation'], ['review_recommendation'], ['generate_report']],
+}
+const DESC = {
+  classify_query: '识别请求类型：rag_qa / technology_selection / direct_response',
+  recall_memory: '按 user_id + project_id 召回长期记忆（精确 + 语义）',
+  invoke: '调用对应子工作流，完成后回到主路由汇总',
+  vector_retrieve: 'Milvus 向量检索，与图谱检索并行执行',
+  graph_retrieve: 'Neo4j 图谱检索，与向量检索并行执行',
+  grade_documents: '对融合结果做证据相关性筛选；无相关文档时改写或联网',
+  transform_query: '改写查询后重新检索，上限 2 次',
+  web_search: 'Tavily 联网检索，作为本地证据不足时的兜底',
+  generate: '基于证据生成回答',
+  assess_generation: '幻觉评估 + 是否回答问题；不通过则有界修复',
+  retrieve_evidence: '为每个候选检索并评估证据，并发上限 2',
+  optimize_evidence_queries: '证据不足时生成定向补检任务，上限 3 轮',
+  review_recommendation: '审查推荐结论：通过 / 证据缺口 / 重新评分，上限 2 轮',
+  clarify_requirements: '需求不完整或无可行候选时，向用户提出澄清问题',
+}
+const labelOf = {}
+Object.values(graph).flat().forEach(([id, l]) => { labelOf[id] = l })
+let cur = sessions[0], shown = cur.progress.length, selId = null, timer = null
+
+function nodeState(id, events, scope) {
+  const hits = events.filter((e) => id === 'invoke' ? e.scope !== 'router' : e.stage_id === id && (scope === 'router' ? e.scope === 'router' : e.scope !== 'router'))
+  if (!hits.length) return { cls: 'pending', hits }
+  const last = hits[hits.length - 1]
+  const cls = last.status === 'running' ? 'running' : last.status === 'paused' ? 'paused' : (id === 'invoke' && events.some((e) => e.status === 'running' && e.scope !== 'router')) ? 'running' : 'done'
+  return { cls, hits }
+}
+
+function lane(scope, title, events, loops) {
+  const cols = LAYOUT[scope].map((col, ci) => {
+    const nodes = col.map((id) => {
+      const { cls, hits } = nodeState(id, events, scope)
+      const dur = hits.reduce((a, e) => a + (e.duration_ms || 0), 0)
+      return `<div class="node ${cls} ${selId === scope + ':' + id ? 'sel' : ''}" data-node="${scope}:${id}">
+        ${hits.length > 1 && id !== 'invoke' ? `<span class="v">×${hits.length}</span>` : ''}
+        <div class="l">${labelOf[id] || id}</div><div class="d">${cls === 'pending' ? '—' : cls === 'running' ? '运行中' : cls === 'paused' ? '等待用户' : U.ms(dur)}</div></div>`
+    }).join('')
+    const prevLit = ci > 0 && LAYOUT[scope][ci].some((id) => nodeState(id, events, scope).cls !== 'pending')
+    return (ci ? `<div class="arrow ${prevLit ? 'lit' : ''}"></div>` : '') + `<div class="col">${nodes}</div>`
+  }).join('')
+  return `<div class="lane"><div class="lane-h">${title}${loops || ''}</div><div class="flow">${cols}</div></div>`
+}
+
+function count(events, id) { return events.filter((e) => e.stage_id === id).length }
+
+function renderCanvas() {
+  const events = cur.progress.slice(0, shown)
+  const st = STATUS[cur.status]
+  document.getElementById('title').textContent = cur.title
+  document.getElementById('meta').textContent = `${TYPE[cur.query_type].label} · ${st.label} · ${events.length}/${cur.progress.length} 阶段 · ${U.ms(events.reduce((a, e) => a + (e.duration_ms || 0), 0))}`
+  document.getElementById('cancel').style.display = cur.status === 'running' ? '' : 'none'
+  let html = lane('router', '主路由 · Query Router', events)
+  if (cur.query_type === 'rag_qa') {
+    const rw = count(events, 'transform_query')
+    html += `<div class="branch">↳ invoke_rag_qa</div>` + lane('rag', '普通问答 · RAG QA', events,
+      `<span class="loop ${rw ? 'used' : ''}">↺ 改写 ${rw}/2</span><span class="loop">↺ 重新生成 ${Math.max(0, count(events, 'generate') - 1)}/2</span>`)
+  } else if (cur.query_type === 'technology_selection') {
+    const er = Math.max(0, count(events, 'retrieve_evidence'))
+    html += `<div class="branch">↳ invoke_technology_selection</div>` + lane('selection', '技术选型 · Technology Selection', events,
+      `<span class="loop ${count(events, 'clarify_requirements') ? 'used' : ''}">↺ 澄清 ${count(events, 'clarify_requirements')}</span><span class="loop ${er > 1 ? 'used' : ''}">↺ 证据补检 ${Math.max(0, er - 1)}/3</span><span class="loop">↺ 审查 ${count(events, 'review_recommendation')}/2</span>`)
+  }
+  document.getElementById('lanes').innerHTML = html
+}
+
+function renderTabs() {
+  document.getElementById('tabs').innerHTML = sessions.map((s) =>
+    `<div class="tab ${s === cur ? 'on' : ''}" data-id="${s.thread_id}"><i class="t-${STATUS[s.status].tone}"></i>${U.esc(s.title)}</div>`).join('')
+}
+
+function renderConvo() {
+  let body = ''
+  if (cur.status === 'running') body = `<div class="a" style="color:var(--muted)">正在执行「${cur.progress.find((e) => e.status === 'running').label}」，结果生成后会显示在这里。</div>`
+  else if (cur.status === 'awaiting_user') body = `<div class="a"><p>${U.esc(cur.answer)}</p></div>${cur.clarification_questions.map((q, i) =>
+      `<div class="field"><label>${i + 1}. ${U.esc(q)}</label><input></div>`).join('')}<button class="pri-btn">提交，继续工作流</button>`
+  else if (cur.report_data) {
+    const r = cur.report_data, top = Math.max(...r.candidates.map((c) => c.total))
+    body = `<div class="a"><p>${U.inline(cur.answer)}</p></div><div class="res">${r.candidates.map((c) => `<div class="${c.total === top ? 'win' : ''}">
+      <b>${c.total.toFixed(2)}</b><small>${U.esc(c.name)}</small><div class="bar"><i style="width:${c.total / 5 * 100}%"></i></div></div>`).join('')}</div>
+      <div style="display:flex;gap:8px"><button class="pri-btn">打开完整报告</button><button class="pri-btn" style="background:transparent;color:var(--accent);border:1px solid var(--accent)">下载 docx</button></div>`
+  } else body = `<div class="a">${cur.answer_blocks ? U.blocks(cur.answer_blocks) : `<p>${U.inline(cur.answer)}</p>`}</div>`
+  document.getElementById('convo').innerHTML = `<h2>对话</h2><div class="q">${U.esc(cur.query)}</div>${body}
+    <div class="composer"><input placeholder="继续追问…"><button class="pri-btn">发送</button></div>`
+}
+
+function renderDetail() {
+  if (!selId) {
+    const events = cur.progress.slice(0, shown)
+    const slow = [...events].filter((e) => e.duration_ms).sort((a, b) => b.duration_ms - a.duration_ms).slice(0, 5)
+    document.getElementById('detail').innerHTML = `<h2>节点详情</h2><p style="color:var(--muted);margin-top:0">点击画布中的任一节点查看执行次数、耗时与说明。</p>
+      <h2 style="margin-top:18px">最耗时阶段</h2><div class="runs">${slow.map((e) => `<div><span>${e.label}</span><span>${U.ms(e.duration_ms)}</span></div>`).join('')}</div>`
+    return
+  }
+  const [scope, id] = selId.split(':')
+  const { cls, hits } = nodeState(id, cur.progress.slice(0, shown), scope)
+  const stTxt = { pending: '本次未经过', done: '已完成', running: '运行中', paused: '等待用户' }[cls]
+  document.getElementById('detail').innerHTML = `<h2>节点详情</h2><dl class="kv"><dt>节点</dt><dd><b>${labelOf[id]}</b></dd>
+    <dt>ID</dt><dd style="font:12px var(--mono)">${id}</dd><dt>状态</dt><dd>${stTxt}</dd><dt>执行次数</dt><dd>${hits.length}</dd>
+    <dt>说明</dt><dd>${DESC[id] || '—'}</dd></dl>
+    ${hits.length ? `<div class="runs">${hits.map((e, i) => `<div><span>#${i + 1} ${U.esc(e.label)}</span><span>${U.ms(e.duration_ms)}</span></div>`).join('')}</div>` : ''}`
+}
+
+function render() { renderTabs(); renderCanvas(); renderConvo(); renderDetail() }
+
+document.getElementById('replay').onclick = () => {
+  clearInterval(timer); shown = 0; render()
+  timer = setInterval(() => { shown++; renderCanvas(); renderDetail(); if (shown >= cur.progress.length) clearInterval(timer) }, 380)
+}
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-id]'); const n = e.target.closest('[data-node]')
+  if (t) { clearInterval(timer); cur = sessions.find((s) => s.thread_id === t.dataset.id); shown = cur.progress.length; selId = null; render() }
+  else if (n) { selId = n.dataset.node; renderCanvas(); renderDetail() }
+})
+render()
+</script>
+</body>
+</html>
