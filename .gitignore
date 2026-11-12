@@ -31,8 +31,15 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Local tool caches
+# Local tool caches and machine-specific agent settings
 .reasonix/
+.claude/settings.local.json
+.claude/launch.json
+.claude/worktrees/
+
+# Node dependencies and logs outside frontend/
+node_modules/
+*.log
 
 # Runtime-generated output
 runtime/
